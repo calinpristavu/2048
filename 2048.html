@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>2048</title>
+    <style>
+        #board {
+            border-collapse: collapse;
+
+            tr {
+                td {
+                    width: min(5vw, 5vh);
+                    height: min(5vw, 5vh);
+
+                    border: 1px solid #ccc;
+
+                    text-align: center;
+                    vertical-align: middle;
+
+                    span {
+                        transition: all 2s ease;
+                    }
+                }
+            }
+        }
+    </style>
+</head>
+<body>
+<table id="board">
+    <tr>
+        <td><span></span></td>
+        <td><span></span></td>
+        <td><span></span></td>
+        <td><span></span></td>
+    </tr>
+    <tr>
+        <td><span></span></td>
+        <td><span></span></td>
+        <td><span></span></td>
+        <td><span></span></td>
+    </tr>
+    <tr>
+        <td><span></span></td>
+        <td><span></span></td>
+        <td><span></span></td>
+        <td><span></span></td>
+    </tr>
+    <tr>
+        <td><span></span></td>
+        <td><span></span></td>
+        <td><span></span></td>
+        <td><span></span></td>
+    </tr>
+</table>
+
+<script type="application/javascript">
+  seed()
+  seed()
+  let moved = false
+
+  document.addEventListener('keyup', ev => {
+    switch (ev.key) {
+      case 'ArrowUp':
+      case 'w':
+        document.querySelectorAll('#board tr:last-child td').forEach((cell, cellIndex) => moveUp(cell, cellIndex))
+        break
+      case 'ArrowLeft':
+      case 'a':
+        document.querySelectorAll('#board tr td:last-child').forEach(cell => moveLeft(cell))
+        break
+      case 'ArrowDown':
+      case 's':
+        document.querySelectorAll('#board tr:first-child td').forEach((cell, cellIndex) => moveDown(cell, cellIndex))
+        break
+      case 'ArrowRight':
+      case 'd':
+        document.querySelectorAll('#board tr td:first-child').forEach(cell => moveRight(cell))
+        break
+      default:
+        return
+    }
+
+    if (moved) {
+      moved = false
+      seed()
+    }
+  })
+
+  function moveUp(cell, cellIndex) {
+    if (cell.parentElement.previousElementSibling == null) {
+      return
+    }
+
+    let target = cell.parentElement.previousElementSibling.children[cellIndex]
+
+    if (mergeCells(cell, target)) {
+      target = cell.parentElement.parentElement.lastElementChild.children[cellIndex]
+    }
+
+    moveUp(target, cellIndex)
+  }
+
+  function moveLeft(cell) {
+    if (cell.previousElementSibling === null) {
+      return
+    }
+
+    let target = cell.previousElementSibling
+
+    if (mergeCells(cell, target)) {
+      target = cell.parentElement.lastElementChild
+    }
+
+    moveLeft(target)
+  }
+
+  function moveDown(cell, cellIndex) {
+    if (cell.parentElement.nextElementSibling === null) {
+      return
+    }
+
+    let target = cell.parentElement.nextElementSibling.children[cellIndex]
+
+    if (mergeCells(cell, target)) {
+      target = cell.parentElement.parentElement.firstElementChild.children[cellIndex]
+    }
+
+    moveDown(target, cellIndex)
+  }
+
+  function moveRight(cell) {
+    if (cell.nextElementSibling === null) {
+      return
+    }
+
+    let target = cell.nextElementSibling
+
+    if (mergeCells(cell, target)) {
+      target = cell.parentElement.firstElementChild
+    }
+
+    moveRight(target)
+  }
+
+  function mergeCells(from, to) {
+    const fromVal = Number(from.firstElementChild.textContent)
+    let toVal = Number(to.firstElementChild.textContent)
+
+    if (fromVal === 0) {
+      return false
+    }
+
+    if (fromVal !== toVal && toVal !== 0) {
+      return false
+    }
+
+    // TODO: animations
+
+    from.firstElementChild.textContent = ""
+    toVal += fromVal
+    to.firstElementChild.textContent = String(toVal)
+
+    moved = true
+
+    return true
+  }
+
+  function seed() {
+    const emptyCells = document.querySelectorAll('#board tr td span:empty')
+
+    if (emptyCells.length === 0) {
+      alert("GAME OVER")
+      return
+    }
+
+    const randomIdx = Math.floor(Math.random() * (emptyCells.length))
+
+    emptyCells[randomIdx].textContent = String((Math.round(Math.random()) + 1) * 2)
+  }
+</script>
+
+</body>
+</html>
