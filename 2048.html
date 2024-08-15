@@ -12,8 +12,8 @@
 
             tr {
                 td {
-                    width: min(5vw, 5vh);
-                    height: min(5vw, 5vh);
+                    width: min(15vw, 15vh);
+                    height: min(15vw, 15vh);
 
                     border: 1px solid #ccc;
 
@@ -22,6 +22,7 @@
 
                     span {
                         transition: all 2s ease;
+                        font-size: min(7vw, 7vh);
                     }
                 }
             }
@@ -30,30 +31,38 @@
 </head>
 <body>
 <table id="board">
-    <tr>
-        <td><span></span></td>
-        <td><span></span></td>
-        <td><span></span></td>
-        <td><span></span></td>
-    </tr>
-    <tr>
-        <td><span></span></td>
-        <td><span></span></td>
-        <td><span></span></td>
-        <td><span></span></td>
-    </tr>
-    <tr>
-        <td><span></span></td>
-        <td><span></span></td>
-        <td><span></span></td>
-        <td><span></span></td>
-    </tr>
-    <tr>
-        <td><span></span></td>
-        <td><span></span></td>
-        <td><span></span></td>
-        <td><span></span></td>
-    </tr>
+    <colgroup>
+        <col>
+        <col>
+        <col>
+        <col>
+    </colgroup>
+    <tbody>
+        <tr>
+            <td><span></span></td>
+            <td><span></span></td>
+            <td><span></span></td>
+            <td><span></span></td>
+        </tr>
+        <tr>
+            <td><span></span></td>
+            <td><span></span></td>
+            <td><span></span></td>
+            <td><span></span></td>
+        </tr>
+        <tr>
+            <td><span></span></td>
+            <td><span></span></td>
+            <td><span></span></td>
+            <td><span></span></td>
+        </tr>
+        <tr>
+            <td><span></span></td>
+            <td><span></span></td>
+            <td><span></span></td>
+            <td><span></span></td>
+        </tr>
+    </tbody>
 </table>
 
 <script type="application/javascript">
@@ -65,19 +74,19 @@
     switch (ev.key) {
       case 'ArrowUp':
       case 'w':
-        document.querySelectorAll('#board tr:last-child td').forEach((cell, cellIndex) => moveUp(cell, cellIndex))
+        chunkCellsByColumn(Array.from(document.querySelectorAll("#board tr td"))).forEach(row => performMoveOnVector(row))
         break
       case 'ArrowLeft':
       case 'a':
-        document.querySelectorAll('#board tr td:last-child').forEach(cell => moveLeft(cell))
+        document.querySelectorAll("#board tr").forEach(tr => performMoveOnVector(tr.children))
         break
       case 'ArrowDown':
       case 's':
-        document.querySelectorAll('#board tr:first-child td').forEach((cell, cellIndex) => moveDown(cell, cellIndex))
+        chunkCellsByColumn(Array.from(document.querySelectorAll("#board tr td"))).forEach(row => performMoveOnVector(row.reverse()))
         break
       case 'ArrowRight':
       case 'd':
-        document.querySelectorAll('#board tr td:first-child').forEach(cell => moveRight(cell))
+        document.querySelectorAll("#board tr").forEach(tr => performMoveOnVector(Array.from(tr.children).reverse()))
         break
       default:
         return
@@ -89,73 +98,13 @@
     }
   })
 
-  function moveUp(cell, cellIndex) {
-    if (cell.parentElement.previousElementSibling == null) {
-      return
-    }
-
-    let target = cell.parentElement.previousElementSibling.children[cellIndex]
-
-    if (mergeCells(cell, target)) {
-      target = cell.parentElement.parentElement.lastElementChild.children[cellIndex]
-    }
-
-    moveUp(target, cellIndex)
-  }
-
-  function moveLeft(cell) {
-    if (cell.previousElementSibling === null) {
-      return
-    }
-
-    let target = cell.previousElementSibling
-
-    if (mergeCells(cell, target)) {
-      target = cell.parentElement.lastElementChild
-    }
-
-    moveLeft(target)
-  }
-
-  function moveDown(cell, cellIndex) {
-    if (cell.parentElement.nextElementSibling === null) {
-      return
-    }
-
-    let target = cell.parentElement.nextElementSibling.children[cellIndex]
-
-    if (mergeCells(cell, target)) {
-      target = cell.parentElement.parentElement.firstElementChild.children[cellIndex]
-    }
-
-    moveDown(target, cellIndex)
-  }
-
-  function moveRight(cell) {
-    if (cell.nextElementSibling === null) {
-      return
-    }
-
-    let target = cell.nextElementSibling
-
-    if (mergeCells(cell, target)) {
-      target = cell.parentElement.firstElementChild
-    }
-
-    moveRight(target)
-  }
-
   function mergeCells(from, to) {
+    if (canMergeCells(from, to) < 0) {
+      return
+    }
+
     const fromVal = Number(from.firstElementChild.textContent)
     let toVal = Number(to.firstElementChild.textContent)
-
-    if (fromVal === 0) {
-      return false
-    }
-
-    if (fromVal !== toVal && toVal !== 0) {
-      return false
-    }
 
     // TODO: animations
 
@@ -164,8 +113,21 @@
     to.firstElementChild.textContent = String(toVal)
 
     moved = true
+  }
 
-    return true
+  function canMergeCells(from, to) {
+    const fromVal = Number(from.firstElementChild.textContent)
+    let toVal = Number(to.firstElementChild.textContent)
+
+    if (fromVal === 0) {
+      return -1
+    }
+
+    if (toVal === 0) {
+      return 0
+    }
+
+    return fromVal === toVal ? 1 : -1
   }
 
   function seed() {
@@ -179,6 +141,49 @@
     const randomIdx = Math.floor(Math.random() * (emptyCells.length))
 
     emptyCells[randomIdx].textContent = String((Math.round(Math.random()) + 1) * 2)
+  }
+
+  function chunkCellsByColumn(arr) {
+    if (arr.length === 0) {
+      return arr
+    }
+
+    const chunkSize = arr[0].parentElement.parentElement.childElementCount
+
+    return arr.reduce((acc, cell, i) => {
+      let columnIndex = i % chunkSize;
+      if (typeof acc[columnIndex] === "undefined") {
+        acc[columnIndex] = Array()
+      }
+
+      acc[columnIndex].push(cell)
+
+      return acc
+    }, [])
+  }
+
+  function performMoveOnVector(vec) {
+    Object.entries(vec).forEach(([k, v]) => {
+      if (Number(k) === 0) {
+        return
+      }
+
+      let candidateCell = null
+      for (let i = Number(k) - 1; i >= 0; i--) {
+        let mergeStatus = canMergeCells(v, vec[i]);
+        if (-1 === mergeStatus) {
+          break
+        }
+
+        candidateCell = vec[i]
+
+        if (1 === mergeStatus) {
+          break
+        }
+      }
+
+      candidateCell !== null && mergeCells(v, candidateCell)
+    })
   }
 </script>
 
